@@ -103,12 +103,19 @@ class FileDialogHandler extends FlxBasic
 	{
 		@:privateAccess
 		this.path = _fileRef.__path;
-		this.data = File.getContent(this.path);
-		this.completed = true;
-		trace('Loaded file from: $path');
-
 		removeEvents();
 		this.completed = true;
+		try
+		{
+			this.data = File.getContent(this.path);
+			trace('Loaded file from: $path');
+		}
+		catch(e:Dynamic)
+		{
+			trace('ERROR! $e');
+			if(onError != null) onError();
+			return;
+		}
 		if(onComplete != null)
 			onComplete();
 	}
@@ -121,7 +128,6 @@ class FileDialogHandler extends FlxBasic
 		trace('Loaded directory: $path');
 
 		removeEvents();
-		this.completed = true;
 		if(onComplete != null)
 			onComplete();
 	}
@@ -130,7 +136,7 @@ class FileDialogHandler extends FlxBasic
 	{
 		removeEvents();
 		this.completed = true;
-		if(onCancel != null) onError();
+		if(onCancel != null) onCancel();
 	}
 
 	function onErrorFn(_)
@@ -154,7 +160,7 @@ class FileDialogHandler extends FlxBasic
 	function removeEvents()
 	{
 		if(_currentEvent == null) return;
-		
+
 		_fileRef.removeEventListener(#if desktop Event.SELECT #else Event.COMPLETE #end, _currentEvent);
 		_currentEvent = null;
 	}
@@ -184,7 +190,7 @@ class FileReferenceCustom extends FileReference
 		_trackSavedPath = path;
 		super.saveFileDialog_onSelect(path);
 	}
-	
+
 	public function browseEx(browseType:FileDialogType = OPEN, ?defaultName:String, ?title:String = null, ?typeFilter:Array<FileFilter> = null):Bool
 	{
 		__data = null;
