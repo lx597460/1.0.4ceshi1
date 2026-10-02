@@ -16,7 +16,7 @@ class PsychUINumericStepper extends PsychUIInputText
 	public var value(default, set):Float;
 	public function new(x:Float = 0, y:Float = 0, step:Float = 1, defValue:Float = 0, min:Float = -999, max:Float = 999, decimals:Int = 0, ?wid:Int = 60, ?isPercent:Bool = false)
 	{
-		super(x, y, wid, '');
+		super(x, y, wid, '', 12);
 		fieldWidth = Std.int(behindText.width + 2);
 		@:bypassAccessor this.decimals = decimals;
 		@:bypassAccessor this.isPercent = isPercent;
@@ -25,13 +25,13 @@ class PsychUINumericStepper extends PsychUIInputText
 		this.step = step;
 		_updateFilter();
 
-		buttonPlus = new FlxSprite(fieldWidth).loadGraphic(Paths.image('psych-ui/stepper_plus', 'embed'), true, 16, 16);
+		buttonPlus = new FlxSprite(fieldWidth).loadGraphic(UITheme.stepperSheet(true), true, 16, 16);
 		buttonPlus.animation.add('normal', [0], false);
 		buttonPlus.animation.add('pressed', [1], false);
 		buttonPlus.animation.play('normal');
 		add(buttonPlus);
-		
-		buttonMinus = new FlxSprite(fieldWidth + buttonPlus.width).loadGraphic(Paths.image('psych-ui/stepper_minus', 'embed'), true, 16, 16);
+
+		buttonMinus = new FlxSprite(fieldWidth + buttonPlus.width).loadGraphic(UITheme.stepperSheet(false), true, 16, 16);
 		buttonMinus.animation.add('normal', [0], false);
 		buttonMinus.animation.add('pressed', [1], false);
 		buttonMinus.animation.play('normal');
@@ -45,19 +45,36 @@ class PsychUINumericStepper extends PsychUIInputText
 		value = defValue;
 	}
 
+	override public function refreshLayout()
+	{
+		super.refreshLayout();
+		if(buttonPlus != null && buttonPlus.exists)
+		{
+			buttonPlus.x = bg.x + fieldWidth;
+			buttonPlus.y = bg.y;
+		}
+		if(buttonMinus != null && buttonMinus.exists)
+		{
+			buttonMinus.x = buttonPlus.x + buttonPlus.width;
+			buttonMinus.y = bg.y;
+		}
+	}
+
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
 
-		if(FlxG.mouse.justPressed)
+		if(FlxG.mouse.justPressed && !PsychUIDropDownMenu.isInputBlocked(this))
 		{
-			if(buttonPlus != null && buttonPlus.exists && FlxG.mouse.overlaps(buttonPlus, camera))
+			var mx:Float = FlxG.mouse.gameX;
+			var my:Float = FlxG.mouse.gameY;
+			if(buttonPlus != null && buttonPlus.exists && mx >= buttonPlus.x && mx <= buttonPlus.x + buttonPlus.width && my >= buttonPlus.y && my <= buttonPlus.y + buttonPlus.height)
 			{
 				buttonPlus.animation.play('pressed');
 				value += step;
 				_internalOnChange();
 			}
-			else if(buttonMinus != null && buttonMinus.exists && FlxG.mouse.overlaps(buttonMinus, camera))
+			else if(buttonMinus != null && buttonMinus.exists && mx >= buttonMinus.x && mx <= buttonMinus.x + buttonMinus.width && my >= buttonMinus.y && my <= buttonMinus.y + buttonMinus.height)
 			{
 				buttonMinus.animation.play('pressed');
 				value -= step;
@@ -113,7 +130,7 @@ class PsychUINumericStepper extends PsychUIInputText
 
 		if(changed)
 		{
-			text = Std.string(value * 100);
+			text = Std.string(isPercent ? value * 100 : value);
 			_updateValue();
 		}
 		return isPercent;
@@ -122,8 +139,8 @@ class PsychUINumericStepper extends PsychUIInputText
 	function _updateValue()
 	{
 		var txt:String = text.replace('%', '');
-		if(txt.indexOf('-') > 0)
-			txt.replace('-', '');
+		if(txt.indexOf('-') != 0)
+			txt = txt.replace('-', '');
 
 		while(txt.indexOf('.') > -1 && txt.indexOf('.') != txt.lastIndexOf('.'))
 		{
@@ -137,9 +154,10 @@ class PsychUINumericStepper extends PsychUIInputText
 
 		if(isPercent) val /= 100;
 
+		if(isPercent) val = FlxMath.roundDecimal(val * 100, decimals) / 100;
+		else val = FlxMath.roundDecimal(val, decimals);
 		if(val < min) val = min;
 		else if(val > max) val = max;
-		val = FlxMath.roundDecimal(val, decimals);
 		@:bypassAccessor value = val;
 
 		if(isPercent)
@@ -152,7 +170,7 @@ class PsychUINumericStepper extends PsychUIInputText
 		if(caretIndex > text.length) caretIndex = text.length;
 		if(selectIndex > text.length) selectIndex = text.length;
 	}
-	
+
 	function _updateFilter()
 	{
 		if(min < 0)

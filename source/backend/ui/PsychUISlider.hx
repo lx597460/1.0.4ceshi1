@@ -1,5 +1,7 @@
 package backend.ui;
 
+import flixel.util.FlxSpriteUtil;
+
 class PsychUISlider extends FlxSpriteGroup
 {
 	public static final CHANGE_EVENT = "slider_change";
@@ -13,16 +15,17 @@ class PsychUISlider extends FlxSpriteGroup
 
 	public var value(default, set):Float = 0;
 	public var onChange:Float->Void;
+	public var step:Float = 0;
 	public var min(default, set):Float = -999;
 	public var max(default, set):Float = 999;
 	public var decimals(default, set):Int = 2;
-	public function new(x:Float = 0, y:Float = 0, callback:Float->Void, def:Float = 0, min:Float = -999, max:Float = 999, wid:Float = 200, mainColor:FlxColor = FlxColor.WHITE, handleColor:FlxColor = 0xFFAAAAAA)
+	public function new(x:Float = 0, y:Float = 0, callback:Float->Void, def:Float = 0, min:Float = -999, max:Float = 999, wid:Float = 200, mainColor:FlxColor = UITheme.ACCENT, handleColor:FlxColor = UITheme.TEXT)
 	{
 		super(x, y);
 		this.onChange = callback;
 
-		bar = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
-		bar.scale.set(wid, 5);
+		bar = new FlxSprite().makeGraphic(Std.int(wid), 6, FlxColor.TRANSPARENT, true);
+		FlxSpriteUtil.drawRoundRect(bar, 0.5, 0.5, wid - 1, 5, 3, 3, FlxColor.WHITE);
 		bar.updateHitbox();
 		bar.color = mainColor;
 		add(bar);
@@ -43,8 +46,8 @@ class PsychUISlider extends FlxSpriteGroup
 		labelText.alignment = CENTER;
 		add(labelText);
 
-		handle = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
-		handle.scale.set(5, 15);
+		handle = new FlxSprite().makeGraphic(11, 11, FlxColor.TRANSPARENT, true);
+		FlxSpriteUtil.drawCircle(handle, 5.5, 5.5, 5, FlxColor.WHITE);
 		handle.updateHitbox();
 		handle.color = handleColor;
 		add(handle);
@@ -66,14 +69,15 @@ class PsychUISlider extends FlxSpriteGroup
 		if(FlxG.mouse.justMoved || FlxG.mouse.justPressed || forceNextUpdate)
 		{
 			forceNextUpdate = false;
-			if(FlxG.mouse.justPressed && (FlxG.mouse.overlaps(bar, camera) || FlxG.mouse.overlaps(handle, camera)))
+			if(FlxG.mouse.justPressed && !PsychUIDropDownMenu.isInputBlocked(this) && (FlxG.mouse.overlaps(bar, camera) || FlxG.mouse.overlaps(handle, camera)))
 				movingHandle = true;
-			
+
 			if(movingHandle)
 			{
-				var point:FlxPoint = getScreenPosition(null, camera);
 				var lastValue:Float = FlxMath.roundDecimal(value, decimals);
-				value = Math.max(min, Math.min(max, FlxMath.remapToRange(FlxG.mouse.getPositionInCameraView(camera).x, bar.x, bar.x + bar.width, min, max)));
+				var raw:Float = FlxMath.remapToRange(FlxG.mouse.getPositionInCameraView(camera).x, bar.x, bar.x + bar.width, min, max);
+				if(step > 0) raw = Math.round(raw / step) * step;
+				value = Math.max(min, Math.min(max, raw));
 				if(this.onChange != null && lastValue != value)
 				{
 					this.onChange(FlxMath.roundDecimal(value, decimals));
@@ -94,7 +98,7 @@ class PsychUISlider extends FlxSpriteGroup
 
 		labelText.x = bar.x + bar.width/2 - labelText.width/2;
 		if(label.length > 0) bar.y = labelText.y + 24;
-		
+
 		minText.y = maxText.y = valueText.y = bar.y + 12;
 
 		_updateHandleX();
@@ -102,7 +106,7 @@ class PsychUISlider extends FlxSpriteGroup
 	}
 
 	function _updateHandleX()
-		handle.x = bar.x - handle.width/2 + FlxMath.remapToRange(FlxMath.roundDecimal(value, decimals), min, max, 0, bar.width);
+		handle.x = bar.x - handle.width/2 + ((max == min) ? 0 : FlxMath.remapToRange(FlxMath.roundDecimal(value, decimals), min, max, 0, bar.width));
 
 	function set_decimals(v:Int)
 	{
@@ -144,6 +148,7 @@ class PsychUISlider extends FlxSpriteGroup
 	function set_label(v:String)
 	{
 		labelText.text = v;
+		labelText.size = Std.int(8 * Language.textScale(v));
 		_updatePositions();
 		return labelText.text;
 	}

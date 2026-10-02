@@ -20,16 +20,26 @@ class PsychUICheckBox extends FlxSpriteGroup
 		boxGraphic();
 		add(box);
 
-		text = new FlxText(box.width + 4, 0, textWid, label);
+		text = new FlxText(box.width + 4, 0, textWid, label, Std.int(8 * Language.textScale(label)));
+		text.wordWrap = false;
+		text.font = Paths.font(Language.pickFont(label));
 		text.y += box.height/2 - text.height/2;
+		text.color = UITheme.TEXT;
 		add(text);
 
 		this.onClick = callback;
 	}
 
+	public function refreshLayout()
+	{
+		if(box == null || !box.exists || text == null || !text.exists) return;
+		text.x = box.x + box.width + 4;
+		text.y = box.y + box.height / 2 - text.height / 2;
+	}
+
 	public function boxGraphic()
 	{
-		box.loadGraphic(Paths.image('psych-ui/checkbox', 'embed'), true, 16, 16);
+		box.loadGraphic(UITheme.checkboxSheet(), true, 16, 16);
 		box.animation.add('false', [0]);
 		box.animation.add('true', [1]);
 		box.animation.play('false');
@@ -40,12 +50,17 @@ class PsychUICheckBox extends FlxSpriteGroup
 	{
 		super.update(elapsed);
 
-		if(FlxG.mouse.justPressed)
+		var mx:Float = FlxG.mouse.gameX;
+		var my:Float = FlxG.mouse.gameY;
+		var over:Bool = (mx >= x && mx < x + width) && (my >= y && my < y + height);
+		var targetText:FlxColor = over ? FlxColor.WHITE : UITheme.TEXT;
+		var targetBox:Float = over ? 1 : 0.85;
+		if(text.color != targetText) text.color = FlxColor.interpolate(text.color, targetText, 0.35);
+		box.alpha += (targetBox - box.alpha) * 0.35;
+
+		if(visible && FlxG.mouse.justPressed && !PsychUIDropDownMenu.isInputBlocked(this))
 		{
-			var screenPos:FlxPoint = getScreenPosition(null, camera);
-			var mousePos:FlxPoint = FlxG.mouse.getPositionInCameraView(camera);
-			if((mousePos.x >= screenPos.x && mousePos.x < screenPos.x + width) &&
-				(mousePos.y >= screenPos.y && mousePos.y < screenPos.y + height))
+			if(over)
 			{
 				checked = !checked;
 				if(onClick != null) onClick();
@@ -65,6 +80,11 @@ class PsychUICheckBox extends FlxSpriteGroup
 		return text.text;
 	}
 	function set_label(v:String):String {
-		return (text.text = v);
+		text.text = v;
+		text.font = Paths.font(Language.pickFont(v));
+		text.size = Std.int(8 * Language.textScale(v));
+		text.updateHitbox();
+		text.y = box.y + box.height/2 - text.height/2;
+		return v;
 	}
 }

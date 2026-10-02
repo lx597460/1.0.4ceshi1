@@ -17,8 +17,16 @@ class PsychUITab extends FlxSprite
 		alpha = 0.6;
 
 		@:bypassAccessor this.name = name;
-		text = new FlxText(0, 0, 100, name);
+		text = new FlxText(0, 0, 100, name, Std.int(8 * Language.textScale(name)));
 		text.alignment = CENTER;
+		text.wordWrap = false;
+	}
+
+	public function setText(v:String)
+	{
+		text.text = v;
+		text.font = Paths.font(Language.pickFont(v));
+		text.size = Std.int(8 * Language.textScale(v));
 	}
 
 	override function draw()
@@ -39,7 +47,7 @@ class PsychUITab extends FlxSprite
 		menu = FlxDestroyUtil.destroy(menu);
 		super.destroy();
 	}
-	
+
 	public function updateMenu(parent:PsychUIBox, elapsed:Float)
 	{
 		if(menu != null && menu.exists && menu.active)
@@ -68,10 +76,9 @@ class PsychUITab extends FlxSprite
 
 	function set_name(v:String)
 	{
-		text.text = v;
+		setText(v);
 		return (name = v);
 	}
-
 
 	override function set_cameras(v:Array<FlxCamera>)
 	{
