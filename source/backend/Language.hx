@@ -92,7 +92,7 @@ class Language
 	}
 	#end
 
-	#if LUA_ALLOWED
+    #if LUA_ALLOWED
 	public static function addLuaCallbacks(lua:State) {
 		Lua_helper.add_callback(lua, "getTranslationPhrase", function(key:String, ?defaultPhrase:String, ?values:Array<Dynamic> = null) {
 			return getPhrase(key, defaultPhrase, values);
@@ -103,4 +103,10 @@ class Language
 		});
 	}
 	#end
+
+	// 添加这个方法 ↓↓↓
+	public static function textScale(text:String = ""):Float
+	{
+		return 1.0;
+	}
 }
