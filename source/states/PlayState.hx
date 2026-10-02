@@ -1,5 +1,8 @@
 package states;
 
+import states.editors.CameraEditorState;
+import backend.cameraeditor.CameraEditorData;
+
 import sys.thread.Thread;
 import backend.Highscore;
 import backend.StageData;
